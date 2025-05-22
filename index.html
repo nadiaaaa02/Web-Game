@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pH Adventure</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .character-selection {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .character-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .character-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .h-plus {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .oh-minus {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .character-btn.active {
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            transform: scale(1.1);
+        }
+
+        canvas {
+            border: 3px solid white;
+            border-radius: 10px;
+            display: block;
+            margin: 20px auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .info-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 600px;
+            margin-bottom: 10px;
+        }
+
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 600px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            border: 1px solid white;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .level-info {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .game-over, .game-complete {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .restart-btn, .next-btn {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .restart-btn:hover, .next-btn:hover {
+            background: #45b7aa;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🧪 pH Adventure 🧪</h1>
+        <p style="text-align: center; margin-bottom: 20px;">Pelajari konsep pH sambil bermain!</p>
+        
+        <div class="character-selection">
+            <button class="character-btn h-plus active" onclick="selectCharacter('H+')">
+                H⁺ (Ion Hidrogen)
+            </button>
+            <button class="character-btn oh-minus" onclick="selectCharacter('OH-')">
+                OH⁻ (Ion Hidroksida)
+            </button>
+        </div>
+
+        <div class="info-panel">
+            <div>Level: <span id="levelDisplay">1</span>/10</div>
+            <div>Karakter: <span id="characterDisplay">H⁺</span></div>
+            <div>Status: <span id="statusDisplay">Sehat</span></div>
+        </div>
+
+        <canvas id="gameCanvas" width="600" height="400"></canvas>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #90EE90;"></div>
+                <span>pH 7 (Netral) - Aman untuk semua</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #FF6B6B;"></div>
+                <span>pH 1-3 (Asam Kuat) - Bahaya OH⁻</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #FFB6C1;"></div>
+                <span>pH 4-6 (Asam Lemah) - Aman H⁺</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #4ECDC4;"></div>
+                <span>pH 11-14 (Basa Kuat) - Bahaya H⁺</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #87CEEB;"></div>
+                <span>pH 8-10 (Basa Lemah) - Aman OH⁻</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #FFD700;"></div>
+                <span>⭐ Tujuan (Reach the goal!)</span>
+            </div>
+        </div>
+
+        <div class="level-info" id="levelInfo">
+            Level 1: Pelajari dasar-dasar pH. H⁺ senang di lingkungan asam, OH⁻ senang di lingkungan basa!
+        </div>
+
+        <div class="controls">
+            <p>🎮 Gunakan tombol panah untuk bergerak</p>
+            <p>🎯 Hindari zona pH yang berbahaya untuk karaktermu!</p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game state
+        let currentLevel = 1;
+        let selectedCharacter = 'H+';
+        let playerPos = {x: 0, y: 0};
+        let gameRunning = true;
+
+        // pH Zone colors and properties
+        const zoneTypes = {
+            0: {color: '#90EE90', name: 'Netral (pH 7)', safe: ['H+', 'OH-']},
+            1: {color: '#FF6B6B', name: 'Asam Kuat (pH 1-3)', safe: ['H+']},
+            2: {color: '#FFB6C1', name: 'Asam Lemah (pH 4-6)', safe: ['H+']},
+            3: {color: '#4ECDC4', name: 'Basa Kuat (pH 11-14)', safe: ['OH-']},
+            4: {color: '#87CEEB', name: 'Basa Lemah (pH 8-10)', safe: ['OH-']},
+            5: {color: '#FFD700', name: 'Tujuan', safe: ['H+', 'OH-']}
+        };
+
+        // Level definitions
+        const levels = [
+            {
+                map: [
+                    [0,0,0,1,1,1,0,0,0,5],
+                    [0,1,0,0,0,0,0,1,0,0],
+                    [0,0,0,1,0,1,0,0,0,1],
+                    [1,0,1,0,0,0,1,0,1,0],
+                    [0,0,0,0,1,0,0,0,0,0]
+                ],
+                info: "Level 1: Dasar pH - Hindari zona yang berbahaya!",
+                start: {x: 0, y: 0}
+            },
+            {
+                map: [
+                    [0,3,3,0,0,1,1,0,0,5],
+                    [0,0,3,0,1,0,0,0,3,0],
+                    [3,0,0,0,0,0,1,0,0,3],
+                    [0,0,3,1,0,3,0,0,1,0],
+                    [0,3,0,0,1,0,0,3,0,0]
+                ],
+                info: "Level 2: Asam vs Basa - Perhatikan zona merah dan biru!",
+                start: {x: 0, y: 4}
+            },
+            {
+                map: [
+                    [0,2,2,2,0,0,4,4,0,5],
+                    [2,0,0,2,0,4,0,0,4,0],
+                    [0,0,2,0,0,0,0,4,0,4],
+                    [2,2,0,0,2,4,4,0,0,0],
+                    [0,0,0,2,0,0,0,0,4,0]
+                ],
+                info: "Level 3: Asam & Basa Lemah - Zona pink untuk H⁺, biru muda untuk OH⁻",
+                start: {x: 4, y: 0}
+            },
+            {
+                map: [
+                    [1,3,1,3,0,0,2,4,0,5],
+                    [3,0,0,1,0,2,0,0,4,3],
+                    [0,0,1,0,0,0,0,4,0,1],
+                    [1,3,0,0,1,4,2,0,0,0],
+                    [0,0,0,3,0,0,0,0,2,1]
+                ],
+                info: "Level 4: Kombinasi pH - Berbagai jenis zona pH bercampur!",
+                start: {x: 0, y: 4}
+            },
+            {
+                map: [
+                    [3,3,3,1,1,1,2,2,0,5],
+                    [0,0,3,0,0,1,0,2,0,2],
+                    [3,0,0,0,1,0,0,0,2,0],
+                    [0,0,3,1,0,0,1,2,0,2],
+                    [3,3,0,0,0,1,0,0,0,0]
+                ],
+                info: "Level 5: Lorong pH - Navigasi melalui koridor zona pH!",
+                start: {x: 9, y: 4}
+            },
+            {
+                map: [
+                    [1,1,3,3,0,0,4,4,2,5],
+                    [1,0,0,3,0,4,0,0,2,4],
+                    [0,0,3,0,0,0,0,4,0,2],
+                    [1,3,0,0,3,4,2,0,0,4],
+                    [0,0,0,3,0,0,0,0,2,0]
+                ],
+                info: "Level 6: Zona Campuran - Kuat dan lemah berdampingan!",
+                start: {x: 4, y: 0}
+            },
+            {
+                map: [
+                    [3,1,3,1,0,0,1,3,1,5],
+                    [1,0,0,0,0,1,0,0,0,3],
+                    [3,0,1,3,1,0,3,1,0,1],
+                    [0,0,0,1,0,0,1,0,0,0],
+                    [1,3,1,0,0,3,0,3,1,3]
+                ],
+                info: "Level 7: Papan Catur pH - Pola bergantian zona berbahaya!",
+                start: {x: 4, y: 3}
+            },
+            {
+                map: [
+                    [0,4,2,0,0,0,4,2,0,5],
+                    [4,0,0,2,0,4,0,0,2,0],
+                    [2,0,4,0,0,0,0,2,0,4],
+                    [0,0,2,4,0,4,2,0,0,0],
+                    [4,2,0,0,0,0,0,0,4,2]
+                ],
+                info: "Level 8: Asam-Basa Lemah - Fokus pada zona pink dan biru muda!",
+                start: {x: 0, y: 0}
+            },
+            {
+                map: [
+                    [1,3,2,4,0,0,4,2,3,5],
+                    [3,0,0,0,0,2,0,0,0,1],
+                    [2,0,1,3,4,0,1,3,0,4],
+                    [4,0,0,2,0,0,4,0,0,2],
+                    [0,0,3,1,0,4,2,1,3,0]
+                ],
+                info: "Level 9: Ultimate Challenge - Semua jenis zona pH!",
+                start: {x: 4, y: 2}
+            },
+            {
+                map: [
+                    [1,3,1,3,2,4,3,1,3,5],
+                    [3,0,0,0,0,0,0,0,0,1],
+                    [1,0,3,1,2,4,1,3,0,3],
+                    [0,0,1,0,0,0,0,1,0,0],
+                    [3,1,0,0,4,2,0,0,1,3]
+                ],
+                info: "Level 10: Master pH - Ujian akhir pemahaman pH!",
+                start: {x: 4, y: 3}
+            }
+        ];
+
+        function selectCharacter(character) {
+            selectedCharacter = character;
+            document.getElementById('characterDisplay').textContent = character;
+            
+            // Update button styles
+            document.querySelectorAll('.character-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            if (character === 'H+') {
+                document.querySelector('.h-plus').classList.add('active');
+            } else {
+                document.querySelector('.oh-minus').classList.add('active');
+            }
+            
+            // Reset game if needed
+            if (gameRunning) {
+                initLevel();
+            }
+        }
+
+        function initLevel() {
+            const level = levels[currentLevel - 1];
+            playerPos = {x: level.start.x, y: level.start.y};
+            gameRunning = true;
+            
+            document.getElementById('levelDisplay').textContent = currentLevel;
+            document.getElementById('levelInfo').textContent = level.info;
+            document.getElementById('statusDisplay').textContent = 'Sehat';
+            
+            draw();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const level = levels[currentLevel - 1];
+            const cellWidth = canvas.width / level.map[0].length;
+            const cellHeight = canvas.height / level.map.length;
+            
+            // Draw map
+            for (let y = 0; y < level.map.length; y++) {
+                for (let x = 0; x < level.map[y].length; x++) {
+                    const zoneType = level.map[y][x];
+                    ctx.fillStyle = zoneTypes[zoneType].color;
+                    ctx.fillRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
+                    
+                    // Draw grid lines
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
+                }
+            }
+            
+            // Draw player
+            const playerX = playerPos.x * cellWidth + cellWidth / 2;
+            const playerY = playerPos.y * cellHeight + cellHeight / 2;
+            
+            ctx.fillStyle = selectedCharacter === 'H+' ? '#FF0000' : '#0066CC';
+            ctx.beginPath();
+            ctx.arc(playerX, playerY, Math.min(cellWidth, cellHeight) / 4, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Draw character label
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(selectedCharacter, playerX, playerY + 5);
+        }
+
+        function movePlayer(dx, dy) {
+            if (!gameRunning) return;
+            
+            const level = levels[currentLevel - 1];
+            const newX = playerPos.x + dx;
+            const newY = playerPos.y + dy;
+            
+            // Check boundaries
+            if (newX < 0 || newX >= level.map[0].length || newY < 0 || newY >= level.map.length) {
+                return;
+            }
+            
+            playerPos.x = newX;
+            playerPos.y = newY;
+            
+            // Check zone safety
+            const currentZone = level.map[playerPos.y][playerPos.x];
+            const zoneInfo = zoneTypes[currentZone];
+            
+            if (!zoneInfo.safe.includes(selectedCharacter)) {
+                // Game over
+                gameRunning = false;
+                document.getElementById('statusDisplay').textContent = 'Hancur!';
+                setTimeout(() => {
+                    showGameOver();
+                }, 500);
+                return;
+            }
+            
+            // Check if reached goal
+            if (currentZone === 5) {
+                gameRunning = false;
+                if (currentLevel < levels.length) {
+                    setTimeout(() => {
+                        showLevelComplete();
+                    }, 500);
+                } else {
+                    setTimeout(() => {
+                        showGameComplete();
+                    }, 500);
+                }
+                return;
+            }
+            
+            draw();
+        }
+
+        function showGameOver() {
+            const overlay = document.createElement('div');
+            overlay.className = 'game-over';
+            overlay.innerHTML = `
+                <h2>💥 Game Over!</h2>
+                <p>Karaktermu hancur di zona pH yang berbahaya!</p>
+                <p><strong>Pelajaran:</strong><br>
+                ${selectedCharacter === 'H+' ? 
+                    'Ion H⁺ tidak bisa bertahan di zona basa kuat (pH tinggi)' : 
+                    'Ion OH⁻ tidak bisa bertahan di zona asam kuat (pH rendah)'}</p>
+                <button class="restart-btn" onclick="restartLevel()">Coba Lagi</button>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        function showLevelComplete() {
+            const overlay = document.createElement('div');
+            overlay.className = 'game-complete';
+            overlay.innerHTML = `
+                <h2>🎉 Level Selesai!</h2>
+                <p>Selamat! Kamu berhasil mencapai tujuan!</p>
+                <p><strong>Fun Fact:</strong><br>
+                ${getFunFact()}</p>
+                <button class="next-btn" onclick="nextLevel()">Level Selanjutnya</button>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        function showGameComplete() {
+            const overlay = document.createElement('div');
+            overlay.className = 'game-complete';
+            overlay.innerHTML = `
+                <h2>🏆 Selamat!</h2>
+                <p>Kamu telah menyelesaikan semua level!</p>
+                <p><strong>Kamu sekarang adalah Master pH!</strong><br>
+                Kamu telah memahami bagaimana ion H⁺ dan OH⁻ berinteraksi dengan berbagai zona pH.</p>
+                <button class="restart-btn" onclick="restartGame()">Main Lagi</button>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        function getFunFact() {
+            const facts = [
+                "pH singkatan dari 'potential of Hydrogen' atau 'power of Hydrogen'",
+                "Air murni memiliki pH 7 yang bersifat netral",
+                "Jus lemon memiliki pH sekitar 2 (sangat asam)",
+                "Sabun memiliki pH sekitar 9-10 (basa)",
+                "Skala pH berkisar dari 0 hingga 14",
+                "Setiap penurunan 1 unit pH = peningkatan 10x keasaman",
+                "Asam lambung memiliki pH 1.5-3.5",
+                "Air laut memiliki pH sekitar 8.1",
+                "Baking soda memiliki pH sekitar 9",
+                "Darah manusia memiliki pH 7.35-7.45"
+            ];
+            return facts[Math.floor(Math.random() * facts.length)];
+        }
+
+        function restartLevel() {
+            document.querySelector('.game-over')?.remove();
+            initLevel();
+        }
+
+        function nextLevel() {
+            document.querySelector('.game-complete')?.remove();
+            currentLevel++;
+            initLevel();
+        }
+
+        function restartGame() {
+            document.querySelector('.game-complete')?.remove();
+            currentLevel = 1;
+            initLevel();
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowUp':
+                    e.preventDefault();
+                    movePlayer(0, -1);
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    movePlayer(0, 1);
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    movePlayer(-1, 0);
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    movePlayer(1, 0);
+                    break;
+            }
+        });
+
+        // Initialize game
+        initLevel();
+    </script>
+</body>
+</html>
